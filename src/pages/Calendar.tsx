@@ -109,10 +109,12 @@ export default function Calendar() {
     // ===== BƯỚC 3: GROUP MEETING CHECK (Gọi xuống CalendarManager) =====
     const durationMinutes = Math.round(durationMs / (1000 * 60));
     const matchedMeeting = manager.checkGroupMeetingMatch(name, durationMinutes);
+    
     if (matchedMeeting) {
+      // Tìm thấy -> Mở Confirm Dialog hỏi user có muốn Join không
       setConfirmDialog({ open: true, matched: matchedMeeting });
       setShowAddDialog(false);
-      return;
+      return; // Dừng lại chờ user quyết định
     }
 
     // ===== BƯỚC 4: CREATE & SAVE =====
@@ -123,20 +125,19 @@ export default function Calendar() {
   const executeCreate = (data: AppointmentData) => {
     const { name, location, startDateTime, endDateTime, enableReminder, reminderMinutes } = data;
 
+    // Khởi tạo cuộc hẹn mới lưu vào danh sách
     manager.createAppointment(name, location, startDateTime, endDateTime);
 
+    // Nếu user có tick chọn Reminder -> Tính giờ kích hoạt và thêm vào danh sách
     if (enableReminder) {
       const triggerTime = new Date(startDateTime.getTime() - reminderMinutes * 60 * 1000);
       manager.createReminder(triggerTime, `Nhắc nhở: "${name}" sắp bắt đầu sau ${reminderMinutes} phút`);
     }
 
+    // Đóng form, làm mới UI và báo thành công
     setShowAddDialog(false);
-    setPendingData(null);
     refresh();
-    setSuccessDialog({
-      open: true,
-      message: `Cuộc hẹn "${name}" đã được tạo thành công!${enableReminder ? ` Đã đặt nhắc nhở trước ${reminderMinutes} phút.` : ""}`,
-    });
+    setSuccessDialog({ open: true, message: `Cuộc hẹn đã được tạo thành công!` });
   };
 
   // ===== Handler cho Warning Dialog (Bước 2 - Kết quả) =====
