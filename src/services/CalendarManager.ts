@@ -102,9 +102,14 @@ export class CalendarManager {
    */
   checkGroupMeetingMatch(name: string, duration: number): GroupMeeting | null {
     for (const meeting of this.groupMeetings) {
+      // FIX: Tương thích gọi hàm lấy thời lượng (hỗ trợ cả getDurationMinutes và getDuration)
+      const meetingDuration = typeof meeting.getDurationMinutes === 'function' 
+        ? meeting.getDurationMinutes() 
+        : (meeting as any).getDuration();
+
       if (
         meeting.name.toLowerCase() === name.toLowerCase() &&
-        meeting.getDuration() === duration
+        meetingDuration === duration
       ) {
         return meeting; // Trả về nhóm họp khớp
       }
@@ -129,10 +134,19 @@ export class CalendarManager {
 
   /**
    * joinMeeting(user, meeting) - Tham gia nhóm họp
-   * Gọi phương thức addParticipant của GroupMeeting
    */
   joinMeeting(user: User, meeting: GroupMeeting): void {
-    meeting.addParticipant(user);
+    const target = this.groupMeetings.find(g => g.name === meeting.name);
+    if (target) {
+      // Ưu tiên gọi hàm addParticipant (Chuẩn Đóng gói trong OOP)
+      if (typeof (target as any).addParticipant === 'function') {
+        (target as any).addParticipant(user);
+      } 
+      // Nếu không có hàm addParticipant, chỉ push thẳng vào mảng (không gán lại)
+      else if (target.participants) {
+        target.participants.push(user);
+      }
+    }
   }
 
   /**
